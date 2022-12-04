@@ -28,10 +28,18 @@ div.value-container {
     line-height: 2rem;
 }
 
-td.box {
+div.info-row {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    min-width: 20em;
+}
+
+.box {
     border-radius: 5px;
     color: #ECEFF4;
     transition: ease-in 0.2s;
+    max-width: 2em;
 }
 
 td.blocked {
@@ -42,10 +50,33 @@ td.empty {
     background-color: #E5E9F0;
 }
 
-td.player-1 {
+.player-1 {
     background-color: #BF616A;
 }
 
-td.player-2 {
+.player-2 {
     background-color: #81A1C1;
+}
+
+.item {
+    line-height: 2rem;
+    text-align: left;
+    margin: 1rem 0;
+}
+
+.flex-1 {
+    flex: 1;
+}
+
+.flex-2 {
+    flex: 2;
+}
+
+.flex-3 {
+    flex: 3;
+}
+
+.first-col {
+    text-align: left;
+    width: 2rem;
 }

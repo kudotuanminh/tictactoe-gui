@@ -12,31 +12,56 @@ export default function App() {
 
     const [data, setData] = useState(obj);
     const [loading, setLoading] = useState(true);
+    const [matchesID, setMatchesID] = useState([]);
+    const [matchesInfo, setMatchesInfo] = useState([]);
 
     const url = "ws://s.vominhduc.me:9000";
     const ws = new WebSocket(url);
 
-    const matchesID = [];
-    ws.onopen = () => {
-        ws.send(
-            JSON.stringify({
-                action: 8,
-            })
-        );
+    const fetchMatches = () => {
+        const ws = new WebSocket(url);
+        
+        ws.onopen = () => {
+            console.log("new connection");
+            ws.send(
+                JSON.stringify({
+                    action: 8,
+                })
+            );
+        };
+
         ws.onmessage = (e) => {
             let response = JSON.parse(e.data);
+            let tmp = [];
+            let tmp2 = [];
             response.matches.forEach((match) => {
                 let obj = {
                     label: String(match.matchId),
                     id: match.matchId,
                 };
-                matchesID.push(obj);
+                tmp.push(obj);
+                tmp2.push(match);
             });
+            setMatchesID(tmp);
+            setMatchesInfo(tmp2);
+            ws.close();
         };
-    };
+    }
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            fetchMatches();
+
+        }, 10000);
+
+        return () => clearInterval(interval);
+    }, []);
+
     const [match, setMatch] = useState(19);
 
-    const initWebsocket = () => {
+    const fetchBoard = () => {
+        const ws = new WebSocket(url);
+
         ws.onopen = () => {
             ws.send(
                 JSON.stringify({
@@ -44,17 +69,23 @@ export default function App() {
                     match: match,
                 })
             );
-            ws.onmessage = (event) => {
-                const response = JSON.parse(event.data);
-                setData(response);
-                setLoading(false);
+        };
 
-                console.log(response);
-            };
+        ws.onmessage = (event) => {
+            const response = JSON.parse(event.data);
+            setData(response);
+            setLoading(false);
+
+            console.log(response);
+            ws.close();
         };
     };
     useEffect(() => {
-        initWebsocket();
+        const interval = setInterval(() => {
+            fetchBoard();
+        }, 4000);
+
+        return () => clearInterval(interval);
     }, [match]);
 
     const [rows, setRows] = useState([]);
@@ -106,6 +137,31 @@ export default function App() {
         setLoading(false);
     }, [data]);
 
+    const selectedInfo = matchesInfo.find((m) => m.matchId === match) ?? {
+        "state": -1,
+        "uid1": 0,
+        "uid2": 0,
+    }
+
+    const getState = (value) => {
+        if (value === 0) return "Waiting for players";
+        if (value === 1) return "Started";
+        if (value === 2) return "Finished";
+        return "Unknown"; 
+    }
+
+    let symbolForP1 = faXmark;
+    let classForP1 = "item flex-1 box player-1";
+    let symbolForP2 = faO;
+    let classForP2 = "item flex-1 box player-2";
+
+    if (data?.first === selectedInfo.uid2) {
+        symbolForP2 = faXmark;
+        classForP2 = "item flex-1 box player-1";
+        symbolForP1 = faO;
+        classForP1 = "item flex-1 box player-2";
+    } 
+
     if (loading) return "Loading...";
 
     return (
@@ -125,6 +181,48 @@ export default function App() {
                 <table className="board">
                     <tbody>{rows}</tbody>
                 </table>
+
+                <div>
+                    <div className="info-row">
+                        <div className="item flex-1">State: </div>
+                        <div className="item flex-2">
+                            {getState(selectedInfo.state)}
+                        </div>
+                        <div className="item box flex-1"></div>
+                    </div>
+                    <div className="info-row"> 
+                        <div className="item flex-1">Uid1:</div>
+                        <div className="item flex-2">{selectedInfo.uid1}</div>
+                        <div className={classForP1}> 
+                            <div className="value-container">
+                                <FontAwesomeIcon icon={symbolForP1} />
+                            </div>
+                        </div>
+                    </div>
+                    <div className="info-row"> 
+                        <div className="item flex-1">Uid2:</div>
+                        <div className="item flex-2">{selectedInfo.uid2}</div>
+                        <div className={classForP2}> 
+                            <div className="value-container">
+                                <FontAwesomeIcon icon={symbolForP2} />
+                            </div>
+                        </div>
+                    </div>
+                    <div className="info-row">
+                        <div className="item flex-1">First move: </div>
+                        <div className="item flex-2">
+                            {data?.first}
+                        </div>
+                        <div className="item box flex-1"></div>
+                    </div>
+                    <div className="info-row">
+                        <div className="item flex-1">Winner: </div>
+                        <div className="item flex-2">
+                            {data?.winner}
+                        </div>
+                        <div className="item box flex-1"></div>
+                    </div>
+                </div>
             </div>
         </div>
     );
