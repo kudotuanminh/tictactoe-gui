@@ -15,8 +15,7 @@ export default function App() {
     const [matchesID, setMatchesID] = useState([]);
     const [matchesInfo, setMatchesInfo] = useState([]);
 
-    const url = "ws://s.vominhduc.me:9000";
-    const ws = new WebSocket(url);
+    const url = "ws://0.tcp.ap.ngrok.io:19844";
 
     const fetchMatches = () => {
         const ws = new WebSocket(url);
@@ -50,6 +49,7 @@ export default function App() {
 
     useEffect(() => {
         const interval = setInterval(() => {
+            console.log("Hey i need all matches");
             fetchMatches();
 
         }, 10000);
@@ -59,7 +59,7 @@ export default function App() {
 
     const [match, setMatch] = useState(19);
 
-    const fetchBoard = () => {
+    const fetchBoard = () => {  
         const ws = new WebSocket(url);
 
         ws.onopen = () => {
@@ -82,6 +82,7 @@ export default function App() {
     };
     useEffect(() => {
         const interval = setInterval(() => {
+            console.log("Hey i need board");
             fetchBoard();
         }, 4000);
 
@@ -148,6 +149,12 @@ export default function App() {
         if (value === 1) return "Started";
         if (value === 2) return "Finished";
         return "Unknown"; 
+    }
+
+    const getWinner = (value) => {
+        if (value === -1 || value === null || value === undefined) return "Unknown";
+        if (value === 0) return "Draw";
+        return "Player with UID " + value + " won !!!";
     }
 
     let symbolForP1 = faXmark;
@@ -218,7 +225,7 @@ export default function App() {
                     <div className="info-row">
                         <div className="item flex-1">Winner: </div>
                         <div className="item flex-2">
-                            {data?.winner}
+                            {getWinner(data?.winner)}
                         </div>
                         <div className="item box flex-1"></div>
                     </div>
