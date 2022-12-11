@@ -15,7 +15,7 @@ export default function App() {
     const [matchesID, setMatchesID] = useState([]);
     const [matchesInfo, setMatchesInfo] = useState([]);
 
-    const url = "ws://0.tcp.ap.ngrok.io:19844";
+    const url = "ws://s.vominhduc.me:9000";
 
     const fetchMatches = () => {
         const ws = new WebSocket(url);
