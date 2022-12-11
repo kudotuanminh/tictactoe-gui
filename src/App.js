@@ -10,6 +10,8 @@ export default function App() {
         board: [],
     };
 
+    const [ws, setWs] = useState();
+    const [ws2, setWs2] = useState();
     const [data, setData] = useState(obj);
     const [loading, setLoading] = useState(true);
     const [matchesID, setMatchesID] = useState([]);
@@ -17,19 +19,18 @@ export default function App() {
 
     const url = "ws://s.vominhduc.me:9000";
 
-    const fetchMatches = () => {
-        const ws = new WebSocket(url);
-        
-        ws.onopen = () => {
-            console.log("new connection");
-            ws.send(
+    function constructWs1() {
+        let ws1 = new WebSocket(url);
+        ws1.onopen = () => {
+            console.log("new connection 8");
+            ws1.send(
                 JSON.stringify({
                     action: 8,
                 })
             );
         };
 
-        ws.onmessage = (e) => {
+        ws1.onmessage = (e) => {
             let response = JSON.parse(e.data);
             let tmp = [];
             let tmp2 = [];
@@ -43,50 +44,70 @@ export default function App() {
             });
             setMatchesID(tmp);
             setMatchesInfo(tmp2);
-            ws.close();
         };
+
+        return ws1;
     }
 
     useEffect(() => {
-        const interval = setInterval(() => {
-            console.log("Hey i need all matches");
-            fetchMatches();
+        let ws1 = constructWs1();
+        setWs(ws1);
 
-        }, 10000);
-
-        return () => clearInterval(interval);
-    }, []);
-
-    const [match, setMatch] = useState(19);
-
-    const fetchBoard = () => {  
-        const ws = new WebSocket(url);
-
-        ws.onopen = () => {
-            ws.send(
+        let ws2 = new WebSocket(url);
+        ws2.onopen = () => {
+            ws2.send(
                 JSON.stringify({
                     action: 9,
                     match: match,
                 })
             );
         };
-
-        ws.onmessage = (event) => {
+        ws2.onmessage = (event) => {
             const response = JSON.parse(event.data);
             setData(response);
             setLoading(false);
 
             console.log(response);
-            ws.close();
         };
-    };
+
+        setWs2(ws2);
+
+        return () => {
+            ws1.close();
+            ws2.close();
+        };
+    }, []);
+
+    const [match, setMatch] = useState(19);
+
     useEffect(() => {
         const interval = setInterval(() => {
-            console.log("Hey i need board");
-            fetchBoard();
-        }, 4000);
+            ws.send(
+                JSON.stringify({
+                    action: 8,
+                })
+            );
+        }, 1000);
 
         return () => clearInterval(interval);
+    }, [ws]);
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            ws2.send(
+                JSON.stringify({
+                    action: 9,
+                    match: match,
+                })
+            );
+        }, 1000);
+
+        return () => clearInterval(interval);
+    }, [match, ws2]);
+
+    useEffect(() => {
+        ws?.close();
+        setWs(constructWs1());
     }, [match]);
 
     const [rows, setRows] = useState([]);
@@ -139,17 +160,17 @@ export default function App() {
     }, [data]);
 
     const selectedInfo = matchesInfo.find((m) => m.matchId === match) ?? {
-        "state": -1,
-        "uid1": 0,
-        "uid2": 0,
-    }
+        state: -1,
+        uid1: 0,
+        uid2: 0,
+    };
 
     const getState = (value) => {
         if (value === 0) return "Waiting for players";
         if (value === 1) return "Started";
         if (value === 2) return "Finished";
-        return "Unknown"; 
-    }
+        return "Unknown";
+    };
 
     const getWinner = (value) => {
         if (value === -1 || value === null || value === undefined) return "Unknown";
@@ -167,7 +188,7 @@ export default function App() {
         classForP2 = "item flex-1 box player-1";
         symbolForP1 = faO;
         classForP1 = "item flex-1 box player-2";
-    } 
+    }
 
     if (loading) return "Loading...";
 
@@ -197,19 +218,19 @@ export default function App() {
                         </div>
                         <div className="item box flex-1"></div>
                     </div>
-                    <div className="info-row"> 
+                    <div className="info-row">
                         <div className="item flex-1">Uid1:</div>
                         <div className="item flex-2">{selectedInfo.uid1}</div>
-                        <div className={classForP1}> 
+                        <div className={classForP1}>
                             <div className="value-container">
                                 <FontAwesomeIcon icon={symbolForP1} />
                             </div>
                         </div>
                     </div>
-                    <div className="info-row"> 
+                    <div className="info-row">
                         <div className="item flex-1">Uid2:</div>
                         <div className="item flex-2">{selectedInfo.uid2}</div>
-                        <div className={classForP2}> 
+                        <div className={classForP2}>
                             <div className="value-container">
                                 <FontAwesomeIcon icon={symbolForP2} />
                             </div>
@@ -217,9 +238,7 @@ export default function App() {
                     </div>
                     <div className="info-row">
                         <div className="item flex-1">First move: </div>
-                        <div className="item flex-2">
-                            {data?.first}
-                        </div>
+                        <div className="item flex-2">{data?.first}</div>
                         <div className="item box flex-1"></div>
                     </div>
                     <div className="info-row">
